@@ -1,0 +1,61 @@
+GIT
+  remote: git://git.mobme.in/infrastructure/rpc.git
+  revision: 16bfbd3b6c4088e1648347f04ae2788ab5b93139
+  specs:
+    mobme-infrastructure-rpc (0.0.7)
+      rack
+      rpc (= 0.3)
+      thin
+
+GIT
+  remote: git://github.com/harigopal/rpc.git
+  revision: 6fff1c0df805225cc9acc9cc90ba3dd3173ec02e
+  specs:
+    rpc (0.3)
+
+GEM
+  remote: http://rubygems.org/
+  specs:
+    activemodel (3.0.9)
+      activesupport (= 3.0.9)
+      builder (~> 2.1.2)
+      i18n (~> 0.5.0)
+    activerecord (3.0.9)
+      activemodel (= 3.0.9)
+      activesupport (= 3.0.9)
+      arel (~> 2.0.10)
+      tzinfo (~> 0.3.23)
+    activesupport (3.0.9)
+    arel (2.0.10)
+    builder (2.1.2)
+    daemons (1.1.4)
+    diff-lcs (1.1.2)
+    eventmachine (0.12.10)
+    i18n (0.5.0)
+    rack (1.3.2)
+    rspec (2.6.0)
+      rspec-core (~> 2.6.0)
+      rspec-expectations (~> 2.6.0)
+      rspec-mocks (~> 2.6.0)
+    rspec-core (2.6.4)
+    rspec-expectations (2.6.0)
+      diff-lcs (~> 1.1.2)
+    rspec-mocks (2.6.0)
+    simplecov (0.4.2)
+      simplecov-html (~> 0.4.4)
+    simplecov-html (0.4.5)
+    thin (1.2.11)
+      daemons (>= 1.0.9)
+      eventmachine (>= 0.12.6)
+      rack (>= 1.0.0)
+    tzinfo (0.3.29)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  activerecord
+  mobme-infrastructure-rpc!
+  rpc!
+  rspec
+  simplecov
