@@ -49,24 +49,31 @@ module MobME::Enterprise::TvChannelInfo
     end
 
     describe '#programs_for_channel' do
+
+      let(:air_time) {Time.now.utc}
+
+      before :all do
+        air_time
+      end
+
       before :each do
-        @air_time = Time.now.utc
-        Time.stub_chain(:now, :utc).and_return(@air_time)
+        Time.stub_chain(:now, :utc).and_return(air_time)
       end
 
       it "fetches programs for today for the channel" do
-        Program.should_receive(:where).with("channel_id = :channel_id and air_time like ':air_time%'", {:channel_id => 1, :air_time_start => @air_time.strftime("%Y-%m-%d")}).and_return([])
+
+        Program.should_receive(:where).with("channel_id = :channel_id and air_time like ':air_time%'", {:channel_id => 1, :air_time_start => air_time.strftime("%Y-%m-%d")}).and_return([])
         subject.programs_for_channel(1)
       end
 
       it "returns formatted channel information" do
-        friends = double("", :id => 123, :name => "friends", :category_id => 1, :series_id => 1, :air_time_start => @air_time, :channel_id => 1 )
-        king_of_thrones = double("", :id => 124, :name => "king of thrones", :category_id => 1, :series_id => 2, :air_time_start => @air_time, :channel_id =>1 )
+        friends = double("", :id => 123, :name => "friends", :category_id => 1, :series_id => 1, :air_time_start => air_time, :channel_id => 1 )
+        king_of_thrones = double("", :id => 124, :name => "king of thrones", :category_id => 1, :series_id => 2, :air_time_start => air_time, :channel_id =>1 )
         programs = [friends, king_of_thrones]
         Program.stub(:where).and_return(programs)
         subject.programs_for_channel(1).should == {
-          123 => {:name => "friends", :category_id => 1, :series_id => 1, :air_time_start => @air_time},
-          124 => {:name => "king of thrones", :category_id => 1, :series_id => 2, :air_time_start => @air_time}
+          123 => {:name => "friends", :category_id => 1, :series_id => 1, :air_time_start => air_time},
+          124 => {:name => "king of thrones", :category_id => 1, :series_id => 2, :air_time_start => air_time}
         }
       end
 
@@ -74,5 +81,6 @@ module MobME::Enterprise::TvChannelInfo
         it "fetches programs for that day for the channel"
       end
     end
+
   end
 end

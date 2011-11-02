@@ -23,7 +23,6 @@ module MobME::Enterprise::TvChannelInfo
         program_info[program.id] = {:name => program.name, :category_id => program.category_id, :series_id => program.series_id,:air_time_start => program.air_time_start}
       end
       program_info
-
     end
   end
 end
