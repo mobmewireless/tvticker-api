@@ -16,13 +16,16 @@ module MobME::Enterprise::TvChannelInfo
     end
 
     def programs_for_channel(channel_id)
-      air_time = Time.now.utc
-      programs = Program.where("channel_id = :channel_id and air_time like ':air_time%'", {:channel_id => 1, :air_time_start => air_time.strftime("%Y-%m-%d")})
+      air_time_start = Time.now.utc
+      programs = Program.where("channel_id = :channel_id and air_time_start like ':air_time_start%'", {:channel_id => 1, :air_time_start => air_time_start.strftime("%Y-%m-%d")})
       program_info = {}
       programs.each do |program|
         program_info[program.id] = {:name => program.name, :category_id => program.category_id, :series_id => program.series_id,:air_time_start => program.air_time_start}
       end
       program_info
+    end
+    def programs_for_current_frame(frame_type,from_id,to_id)
+
     end
   end
 end
