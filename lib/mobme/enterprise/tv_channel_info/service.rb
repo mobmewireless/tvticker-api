@@ -11,8 +11,8 @@ module MobME::Enterprise::TvChannelInfo
       ActiveRecord::Base.establish_connection(database_configuration)
     end
 
-    def am_i_live
-      "yes"
+    def ping
+      "pong"
     end
 
     def channels
@@ -45,7 +45,7 @@ module MobME::Enterprise::TvChannelInfo
       elsif frame_type==:later or frame_type == "later"
         Program.where(" air_time_start between :air_time_start and :air_time_end", {:air_time_start =>from_time+60*60, :air_time_end =>(from_time+3*60*60)})
       elsif frame_type==:full or frame_type == "full"
-         Program.where(" air_time_start > :air_time_start ", {:air_time_start =>from_time})
+        Program.where(" air_time_start > :air_time_start ", {:air_time_start =>from_time})
       else
         raise FrameTypeError, "incorrect frame type"
       end
@@ -56,6 +56,21 @@ module MobME::Enterprise::TvChannelInfo
       t.original_link = "http://images2.fanpop.com/images/photos/3900000/Natalie-Portman-natalie-portman-3947071-1413-1229.jpg"
       t.status = "pending"
       t.save
+    end
+
+    def current_version
+      Version.last.number rescue ""
+    end
+
+    def update_to_current_version(client_version = "")
+      client_version_number = Version.find_by_number(client_version)[:id] rescue 0
+      channels = Channel.version_greater_than(client_version_number)
+      categories = Category.version_greater_than(client_version_number)
+      series = Series.version_greater_than(client_version_number)
+      programs = Program.version_greater_than(client_version_number)
+      versions = Version.version_greater_than(client_version_number)
+      return {:channels=>channels, :categories=>categories, :programs=>programs, :series=>programs, :versions=>versions}
+
     end
 
   end

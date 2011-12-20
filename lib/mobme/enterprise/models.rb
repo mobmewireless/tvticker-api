@@ -22,16 +22,37 @@ module MobME::Enterprise::TvChannelInfo
       process :resize_to_limit => [180, 180]
     end
   end
-  class Channel < ActiveRecord::Base;
+
+  class Channel < ActiveRecord::Base
+    scope :version_greater_than, lambda { |v| where("version_id > :version_id", {:version_id =>v}) }
   end
-  class Program < ActiveRecord::Base;
+
+  class Program < ActiveRecord::Base
+    scope :version_greater_than, lambda { |v| where("version_id > :version_id", {:version_id =>v}) }
   end
-  class Series < ActiveRecord::Base;
+
+  class Series < ActiveRecord::Base
+    scope :version_greater_than, lambda { |v| where("version_id > :version_id", {:version_id =>v}) }
   end
-  class Category < ActiveRecord::Base;
+
+  class Category < ActiveRecord::Base
+    scope :version_greater_than, lambda { |v| where("version_id > :version_id", {:version_id =>v}) }
   end
+
+  class Version < ActiveRecord::Base
+    after_initialize :init_version
+
+    def init_version
+      self.number = "#{Time.now.to_i}#{UUID.generate.gsub("-", "")}"
+    end
+
+    scope :version_greater_than, lambda { |v| where("id > :version_id", {:version_id =>v}) }
+
+  end
+
   class Thumbnail < ActiveRecord::Base
-    attr_accessible  :image, :remote_image_url, :image_cache, :image_avatar
+    attr_accessible :image, :remote_image_url, :image_cache, :image_avatar
     mount_uploader :image, ImageUploader
+    scope :version_greater_than, lambda { |v| where("version_id > :version_id", {:version_id =>v}) }
   end
 end

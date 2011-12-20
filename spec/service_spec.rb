@@ -25,8 +25,12 @@ module MobME::Enterprise::TvChannelInfo
     end
 
     it { should respond_to(:channels) }
+    it { should respond_to(:current_version) }
     it { should respond_to(:programs_for_channel).with(1).argument }
     it { should respond_to(:programs_for_current_frame).with(2).arguments }
+    it { should respond_to(:update_to_current_version).with(0).arguments }
+    it { should respond_to(:update_to_current_version).with(1).arguments }
+
 
     describe "#initialize" do
 
@@ -63,7 +67,7 @@ module MobME::Enterprise::TvChannelInfo
         subject.channels.should == {1 => "star", 2 => "hbo"}
       end
     end
-     describe "#categories" do
+    describe "#categories" do
       it "fetches channels from database" do
         Category.should_receive(:all).and_return([])
         subject.categories
@@ -89,7 +93,7 @@ module MobME::Enterprise::TvChannelInfo
 
 
       it "fetches programs for today for the channel" do
-        Program.should_receive(:where).with("channel_id = :channel_id and air_time_start like :air_time_start ",{:channel_id => 1, :air_time_start =>"#{air_time_start.strftime("%Y-%m-%d").to_s}%"}).and_return([])
+        Program.should_receive(:where).with("channel_id = :channel_id and air_time_start like :air_time_start ", {:channel_id => 1, :air_time_start =>"#{air_time_start.strftime("%Y-%m-%d").to_s}%"}).and_return([])
         subject.programs_for_channel(1)
       end
 
@@ -154,5 +158,66 @@ module MobME::Enterprise::TvChannelInfo
       end
 
     end
+
+    describe "#current_version" do
+      context "when version table is empty" do
+
+        it "returns an empty string" do
+          Version.should_receive(:last).and_return([])
+          subject.current_version.should == ""
+        end
+      end
+      context "when version is available" do
+        it "returns the current version" do
+          version = double(:id=>5, :number=>"627167327625361")
+          Version.should_receive(:last).and_return(version)
+          subject.current_version.should == version.number
+        end
+      end
+
+    end
+
+    describe "#update_to_current_version" do
+      it "should invoke version_greater_than function" do
+        Program.should_receive(:version_greater_than)
+        Channel.should_receive(:version_greater_than)
+        Category.should_receive(:version_greater_than)
+        Series.should_receive(:version_greater_than)
+        Version.should_receive(:version_greater_than)
+        subject.update_to_current_version()
+      end
+      it "returns formatted channel information" do
+        friends = double(:id => 123, :name => "friends", :category_id => 1, :series_id => 1, :channel_id => 1, :air_time_start => air_time_start, :air_time_end=>air_time_end, :run_time=>run_time, :imdb_info=>imdb_info,:version_id=>1)
+        king_of_thrones = double(:id => 124, :name => "king of thrones", :category_id => 1, :series_id => 2, :channel_id =>1, :air_time_start => air_time_start, :air_time_end=>air_time_end, :run_time=>run_time, :imdb_info=>imdb_info,:version_id=>2)
+        programs = [friends, king_of_thrones]
+        Program.stub(:version_greater_than).and_return(programs)
+
+        star_tv_entry = double("ActiveRecord Entry", :id => 1, :name => "star",:version_id=>1)
+        hbo_entry = double("ActiveRecord Entry", :id => 2, :name => "hbo",:version_id=>2)
+        channels = [star_tv_entry, hbo_entry]
+        Channel.stub(:version_greater_than).and_return(channels)
+
+        categories =[{:id=>1, :name=>"movie",:version_id=>1}, {:id=>2, :name=>"series",:version_id=>2}]
+        Category.stub(:version_greater_than).and_return(categories)
+
+        friends = double(:id => 123, :name => "friends", :category_id => 1, :series_id => 1, :channel_id => 1, :air_time_start => air_time_start, :air_time_end=>air_time_end, :run_time=>run_time, :imdb_info=>imdb_info,:version_id=>1)
+        king_of_thrones = double(:id => 124, :name => "king of thrones", :category_id => 1, :series_id => 2, :channel_id =>1, :air_time_start => air_time_start, :air_time_end=>air_time_end, :run_time=>run_time, :imdb_info=>imdb_info,:version_id=>2)
+        series = [friends, king_of_thrones]
+        Series.stub(:version_greater_than).and_return(series)
+
+        versions = [{:id=>2, :number=>"32423423"}, {:id=>3, :name=>"34234234"}]
+        Version.stub(:version_greater_than).and_return(versions)
+        client_version = "453453453"
+        Version.should_receive(:find_by_number).with(client_version).and_return([])
+
+        subject.update_to_current_version(client_version).should == {
+            :channels=>channels, :categories=>categories, :programs=>programs, :series=>programs, :versions=>versions
+        }
+
+      end
+
+    end
+
+
   end
 end

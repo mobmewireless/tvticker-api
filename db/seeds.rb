@@ -9,21 +9,24 @@ Channel.delete_all
 Series.delete_all
 Category.delete_all
 Program.delete_all
-#["hbo", "star movies", "cnn", "movies now"].each { |r| p r; Channel.create(:name => r) }
-x = 100
+Version.delete_all
+x = 10
 x.times do
-
+  Version.create
   channel = Channel.new
   channel.name = Random.alphanumeric
+  channel.version_id = Random.number(1..x)
   channel.save
   series = Series.new
   series.name = Random.alphanumeric
   series.imdb_info = "http://www.imdb.com/title/tt0#{ Random.number(100000..999999)}/"
   series.description = Random.paragraphs
   series.rating = Random.number(1..10)
+  series.version_id = Random.number(1..x)
   series.save
   category = Category.new
   category.name = Random.alphanumeric
+  category.version_id = Random.number(1..x)
   category.save
   program = Program.new
 
@@ -35,10 +38,11 @@ x.times do
   temp2 = DateTime.parse("#{Random.date} #{(Time.new+rand(9999)).strftime("at %I:%M%p")  }")
   program.air_time_start = (temp1>temp2) ? temp2 : temp1
   program.air_time_end = (temp1>temp2) ? temp1 : temp2
-  program.run_time =    program.air_time_end.to_time.to_i -  program.air_time_start.to_time.to_i
+  program.run_time = program.air_time_end.to_time.to_i - program.air_time_start.to_time.to_i
   program.imdb_info = "http://www.imdb.com/title/tt0#{ Random.number(100000..999999)}/"
   program.description = Random.paragraphs
   program.rating = Random.number(1..10)
+  program.version_id = Random.number(1..x)
   program.save
 
 end

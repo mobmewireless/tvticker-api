@@ -11,19 +11,25 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20111216100653) do
+ActiveRecord::Schema.define(:version => 20111219060337) do
 
   create_table "categories", :force => true do |t|
     t.string   "name"
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.string   "version_id"
   end
+
+  add_index "categories", ["version_id"], :name => "index_categories_on_version_id"
 
   create_table "channels", :force => true do |t|
     t.string   "name"
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.string   "version_id"
   end
+
+  add_index "channels", ["version_id"], :name => "index_channels_on_version_id"
 
   create_table "programs", :force => true do |t|
     t.string   "name"
@@ -39,7 +45,10 @@ ActiveRecord::Schema.define(:version => 20111216100653) do
     t.string   "rating"
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.string   "version_id"
   end
+
+  add_index "programs", ["version_id"], :name => "index_programs_on_version_id"
 
   create_table "series", :force => true do |t|
     t.string   "name"
@@ -49,7 +58,10 @@ ActiveRecord::Schema.define(:version => 20111216100653) do
     t.string   "rating"
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.string   "version_id"
   end
+
+  add_index "series", ["version_id"], :name => "index_series_on_version_id"
 
   create_table "thumbnails", :force => true do |t|
     t.string   "name"
@@ -59,6 +71,17 @@ ActiveRecord::Schema.define(:version => 20111216100653) do
     t.string   "status"
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.string   "version_id"
   end
+
+  add_index "thumbnails", ["version_id"], :name => "index_thumbnails_on_version_id"
+
+  create_table "versions", :force => true do |t|
+    t.string   "number"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  add_index "versions", ["number"], :name => "index_versions_on_number", :unique => true
 
 end

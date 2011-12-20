@@ -14,6 +14,7 @@ require 'open-uri'
 require "mobme/infrastructure/service"
 require 'mobme/infrastructure/service/worker'
 require 'mobme/infrastructure/queue'
+require "uuid"
 
 # Local
 require_relative 'tv_channel_info/version'
