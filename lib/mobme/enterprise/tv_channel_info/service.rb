@@ -40,11 +40,11 @@ module MobME::Enterprise::TvChannelInfo
 
     def programs_for_current_frame(from_time, frame_type)
       from_time = Time.parse(from_time.to_s);
-      if frame_type==:now or frame_type == "now"
+      if frame_type.to_sym==:now
         Program.where(" air_time_start between :air_time_start and :air_time_end", {:air_time_start =>from_time-60*60, :air_time_end =>(from_time+60*60)})
-      elsif frame_type==:later or frame_type == "later"
+      elsif frame_type.to_sym==:later
         Program.where(" air_time_start between :air_time_start and :air_time_end", {:air_time_start =>from_time+60*60, :air_time_end =>(from_time+3*60*60)})
-      elsif frame_type==:full or frame_type == "full"
+      elsif frame_type.to_sym==:full
         Program.where(" air_time_start > :air_time_start ", {:air_time_start =>from_time})
       else
         raise FrameTypeError, "incorrect frame type"
