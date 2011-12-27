@@ -39,15 +39,24 @@ module MobME::Enterprise::TvChannelInfo
     end
 
     def programs_for_current_frame(from_time, frame_type)
+      time = time_hash_for(from_time, frame_type.to_sym)
+      return Program.where(" air_time_start between :air_time_start and :air_time_end", time) if frame_type.to_sym == :now or frame_type.to_sym == :later
+      return Program.where(" air_time_start > :air_time_start ", time) if frame_type.to_sym == :full
+      raise FrameTypeError, "incorrect frame type"
+    end
+    
+    def time_hash_for(from_time, frame_type)
       from_time = Time.parse(from_time.to_s);
-      if frame_type.to_sym==:now
-        Program.where(" air_time_start between :air_time_start and :air_time_end", {:air_time_start =>from_time-60*60, :air_time_end =>(from_time+60*60)})
-      elsif frame_type.to_sym==:later
-        Program.where(" air_time_start between :air_time_start and :air_time_end", {:air_time_start =>from_time+60*60, :air_time_end =>(from_time+3*60*60)})
-      elsif frame_type.to_sym==:full
-        Program.where(" air_time_start > :air_time_start ", {:air_time_start =>from_time})
+      
+      case frame_type
+      when :now
+        {:air_time_start =>from_time-60*60, :air_time_end =>(from_time+60*60)}
+      when :later
+        {:air_time_start =>from_time+60*60, :air_time_end =>(from_time+3*60*60)}
+      when :full
+        {:air_time_start =>from_time}
       else
-        raise FrameTypeError, "incorrect frame type"
+        nil
       end
     end
 
@@ -64,13 +73,13 @@ module MobME::Enterprise::TvChannelInfo
 
     def update_to_current_version(client_version = "")
       client_version_number = Version.find_by_number(client_version)[:id] rescue 0
-      channels = Channel.version_greater_than(client_version_number)
-      categories = Category.version_greater_than(client_version_number)
-      series = Series.version_greater_than(client_version_number)
-      programs = Program.version_greater_than(client_version_number)
-      versions = Version.version_greater_than(client_version_number)
-      return {:channels=>channels, :categories=>categories, :programs=>programs, :series=>programs, :versions=>versions}
-
+      {
+        :channels => Channel.version_greater_than(client_version_number),
+        :categories => Category.version_greater_than(client_version_number),
+        :programs => Program.version_greater_than(client_version_number),
+        :series => Series.version_greater_than(client_version_number),
+        :versions => Version.version_greater_than(client_version_number)
+      }
     end
 
   end
