@@ -24,19 +24,19 @@ module MobME::Enterprise::TvChannelInfo
   end
 
   class Channel < ActiveRecord::Base
-    scope :version_greater_than, lambda { |v| where("version_id > :version_id", {:version_id =>v}) }
+    scope :version_greater_than, lambda { |v| select(column_names - ["version_id"]).where("version_id > :version_id", {:version_id =>v}) }
   end
 
   class Program < ActiveRecord::Base
-    scope :version_greater_than, lambda { |v| where("version_id > :version_id", {:version_id =>v}) }
+    scope :version_greater_than, lambda { |v| select(column_names - ["version_id"]).where("version_id > :version_id and air_time_end > :air_time_end", {:version_id =>v,:air_time_end => (Time.now - (60*60))} ) }
   end
 
   class Series < ActiveRecord::Base
-    scope :version_greater_than, lambda { |v| where("version_id > :version_id", {:version_id =>v}) }
+    scope :version_greater_than, lambda { |v| select(column_names - ["version_id"]).where("version_id > :version_id", {:version_id =>v})}
   end
 
   class Category < ActiveRecord::Base
-    scope :version_greater_than, lambda { |v| where("version_id > :version_id", {:version_id =>v}) }
+    scope :version_greater_than, lambda { |v| select(column_names - ["version_id"]).where("version_id > :version_id", {:version_id =>v}) }
   end
 
   class Version < ActiveRecord::Base

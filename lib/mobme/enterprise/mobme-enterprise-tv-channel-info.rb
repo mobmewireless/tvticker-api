@@ -22,7 +22,7 @@ require_relative 'models'
 require_relative 'tv_channel_info/service'
 
 
-
+ ActiveRecord::Base.logger = Logger.new(STDOUT)
 s=MobME::Enterprise::TvChannelInfo::Service.new
 #t = MobME::Enterprise::TvChannelInfo::Thumbnail.new
 

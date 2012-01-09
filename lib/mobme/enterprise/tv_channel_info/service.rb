@@ -4,6 +4,7 @@ module MobME::Enterprise::TvChannelInfo
 
   class Service < MobME::Infrastructure::RPC::Base
 
+
     def initialize
       database_configuration_file = File.read File.expand_path(File.dirname(__FILE__)) + "/../../../../db/config.yml"
       database_configuration = YAML.load(database_configuration_file)
@@ -16,16 +17,11 @@ module MobME::Enterprise::TvChannelInfo
     end
 
     def channels
-      channels = Channel.all
-      channel_info = {}
-      channels.each do |channel|
-        channel_info[channel.id] = channel.name
-      end
-      channel_info
+      channels = Channel.select(Channel.column_names - ["version_id"])
     end
 
     def categories
-      categories = Category.all
+     Category.select(Category.column_names - ["version_id"])
     end
 
     def programs_for_channel(channel_id)
@@ -40,23 +36,22 @@ module MobME::Enterprise::TvChannelInfo
 
     def programs_for_current_frame(from_time, frame_type)
       time = time_hash_for(from_time, frame_type.to_sym)
-      return Program.where(" air_time_start between :air_time_start and :air_time_end", time) if frame_type.to_sym == :now or frame_type.to_sym == :later
-      return Program.where(" air_time_start > :air_time_start ", time) if frame_type.to_sym == :full
+      return Program.select(Program.column_names - ["version_id"]).where(" air_time_start between :air_time_start and :air_time_end", time) if frame_type.to_sym == :now or frame_type.to_sym == :later
+      return Program.select(Program.column_names - ["version_id"]).where(" air_time_start > :air_time_start ", time)if frame_type.to_sym == :full
       raise FrameTypeError, "incorrect frame type"
     end
-    
+
     def time_hash_for(from_time, frame_type)
       from_time = Time.parse(from_time.to_s);
-      
       case frame_type
-      when :now
-        {:air_time_start =>from_time-60*60, :air_time_end =>(from_time+60*60)}
-      when :later
-        {:air_time_start =>from_time+60*60, :air_time_end =>(from_time+3*60*60)}
-      when :full
-        {:air_time_start =>from_time}
-      else
-        nil
+        when :now
+          {:air_time_start =>from_time-60*60, :air_time_end =>(from_time+60*60)}
+        when :later
+          {:air_time_start =>from_time+60*60, :air_time_end =>(from_time+3*60*60)}
+        when :full
+          {:air_time_start =>from_time}
+        else
+          nil
       end
     end
 
@@ -74,12 +69,13 @@ module MobME::Enterprise::TvChannelInfo
     def update_to_current_version(client_version = "")
       client_version_number = Version.find_by_number(client_version)[:id] rescue 0
       {
-        :channels => Channel.version_greater_than(client_version_number),
-        :categories => Category.version_greater_than(client_version_number),
-        :programs => Program.version_greater_than(client_version_number),
-        :series => Series.version_greater_than(client_version_number),
-        :versions => Version.version_greater_than(client_version_number)
+          :channels => Channel.version_greater_than(client_version_number),
+          :categories => Category.version_greater_than(client_version_number),
+          :programs => Program.version_greater_than(client_version_number),
+          :series => Series.version_greater_than(client_version_number),
+          :versions => Version.version_greater_than(client_version_number)
       }
+
     end
 
   end
