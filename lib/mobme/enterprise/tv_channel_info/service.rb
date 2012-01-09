@@ -26,12 +26,7 @@ module MobME::Enterprise::TvChannelInfo
 
     def programs_for_channel(channel_id)
       air_time_start = Time.now.utc
-      programs = Program.where("channel_id = :channel_id and air_time_start like :air_time_start ", {:channel_id => channel_id, :air_time_start =>"#{air_time_start.strftime("%Y-%m-%d").to_s}%"})
-      program_info = {}
-      programs.each do |program|
-        program_info[program.id] = {:name => program.name, :category_id => program.category_id, :series_id => program.series_id, :air_time_start => program.air_time_start}
-      end
-      program_info
+      Program.select(Program.column_names - ["version_id"]).where("channel_id = :channel_id and air_time_start like :air_time_start ", {:channel_id => channel_id, :air_time_start =>"#{air_time_start.strftime("%Y-%m-%d").to_s}%"})
     end
 
     def programs_for_current_frame(from_time, frame_type)
