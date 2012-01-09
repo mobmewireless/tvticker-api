@@ -21,7 +21,7 @@ module MobME::Enterprise::TvChannelInfo
     end
 
     def categories
-     Category.select(Category.column_names - ["version_id"])
+      Category.select(Category.column_names - ["version_id"])
     end
 
     def programs_for_channel(channel_id)
@@ -32,7 +32,7 @@ module MobME::Enterprise::TvChannelInfo
     def programs_for_current_frame(from_time, frame_type)
       time = time_hash_for(from_time, frame_type.to_sym)
       return Program.select(Program.column_names - ["version_id"]).where(" air_time_start between :air_time_start and :air_time_end", time) if frame_type.to_sym == :now or frame_type.to_sym == :later
-      return Program.select(Program.column_names - ["version_id"]).where(" air_time_start > :air_time_start ", time)if frame_type.to_sym == :full
+      return Program.select(Program.column_names - ["version_id"]).where(" air_time_start > :air_time_start ", time) if frame_type.to_sym == :full
       raise FrameTypeError, "incorrect frame type"
     end
 

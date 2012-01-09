@@ -12,10 +12,10 @@ module MobME::Enterprise::TvChannelInfo
     let(:air_time_end) { Time.now.utc }
     let(:run_time) { rand(300) }
     let(:imdb_info) { "sdjsafdjklsbjkfb" }
-    let(:friends) {double(:id => 123, :name => "friends", :category_id => 1, :series_id => 1, :channel_id => 1, :air_time_start => air_time_start, :air_time_end=>air_time_end, :run_time=>run_time, :imdb_info=>imdb_info)}
-    let(:king_of_thrones){ double(:id => 124, :name => "king of thrones", :category_id => 1, :series_id => 2, :channel_id =>1, :air_time_start => air_time_start, :air_time_end=>air_time_end, :run_time=>run_time, :imdb_info=>imdb_info)}
+    let(:friends) { double(:id => 123, :name => "friends", :category_id => 1, :series_id => 1, :channel_id => 1, :air_time_start => air_time_start, :air_time_end=>air_time_end, :run_time=>run_time, :imdb_info=>imdb_info) }
+    let(:king_of_thrones) { double(:id => 124, :name => "king of thrones", :category_id => 1, :series_id => 2, :channel_id =>1, :air_time_start => air_time_start, :air_time_end=>air_time_end, :run_time=>run_time, :imdb_info=>imdb_info) }
     let(:programs) { [friends, king_of_thrones] }
-    let(:air_time) { Time.parse air_time_start.to_s}
+    let(:air_time) { Time.parse air_time_start.to_s }
 
     before :all do
       air_time_start
@@ -98,115 +98,112 @@ module MobME::Enterprise::TvChannelInfo
       end
 
       it "returns formatted channel information" do
-        Program.stub_chain(:select,:where).and_return([])
+        Program.stub_chain(:select, :where).and_return([])
         subject.programs_for_channel(1).should == []
       end
 
     end
 
-
     describe "#programs_for_current_frame" do
       context "when frame_type is now" do
-       it "queries programs table " do
-        Program.stub(:select).and_return(programs)
-        programs.should_receive(:where).with(" air_time_start between :air_time_start and :air_time_end", {:air_time_start => air_time-60*60, :air_time_end =>air_time+60*60}).and_return(programs)
-        subject.programs_for_current_frame(air_time, :now)  
+        it "queries programs table " do
+          Program.stub(:select).and_return(programs)
+          programs.should_receive(:where).with(" air_time_start between :air_time_start and :air_time_end", {:air_time_start => air_time-60*60, :air_time_end =>air_time+60*60}).and_return(programs)
+          subject.programs_for_current_frame(air_time, :now)
+        end
+        it "fetches list of programs for the frame type" do
+          Program.stub_chain(:select, :where).and_return(programs)
+          subject.programs_for_current_frame(air_time, :now).should== programs
+        end
       end
-      it "fetches list of programs for the frame type" do
-       Program.stub_chain(:select,:where).and_return(programs)
-       subject.programs_for_current_frame(air_time, :now).should== programs
-     end
-   end
 
-   context "when frame_type is later" do
-    it "queries programs table " do
-      Program.stub(:select).and_return(programs)
-      programs.should_receive(:where).with(" air_time_start between :air_time_start and :air_time_end", {:air_time_start => air_time+60*60, :air_time_end =>air_time+3*60*60}).and_return(programs)
-      subject.programs_for_current_frame(air_time, :later).should == programs
+      context "when frame_type is later" do
+        it "queries programs table " do
+          Program.stub(:select).and_return(programs)
+          programs.should_receive(:where).with(" air_time_start between :air_time_start and :air_time_end", {:air_time_start => air_time+60*60, :air_time_end =>air_time+3*60*60}).and_return(programs)
+          subject.programs_for_current_frame(air_time, :later).should == programs
+        end
+
+        it "fetches list of programs for the frame type" do
+          Program.stub_chain(:select, :where).and_return(programs)
+          subject.programs_for_current_frame(air_time, :later).should == programs
+        end
+
+      end
+      context "when frame_type is full" do
+        it "queries programs table " do
+          Program.stub(:select).and_return(programs)
+          programs.should_receive(:where).with(" air_time_start > :air_time_start ", {:air_time_start => air_time}).and_return(programs)
+          subject.programs_for_current_frame(air_time, :full).should == programs
+        end
+        it "fetches list of programs for the frame type" do
+
+          Program.stub_chain(:select, :where).and_return(programs)
+          subject.programs_for_current_frame(air_time, :full).should == programs
+        end
+      end
+      context "when frame_type is incorrect" do
+        it "fetches list of programs for the frame type" do
+          air_time =Time.parse air_time_start.to_s
+          expect {
+            subject.programs_for_current_frame(air_time, :incorrect)
+          }.to raise_error(FrameTypeError, "incorrect frame type")
+        end
+      end
+
     end
 
-    it "fetches list of programs for the frame type" do
-      Program.stub_chain(:select,:where).and_return(programs)
-      subject.programs_for_current_frame(air_time, :later).should == programs
+    describe "#current_version" do
+      context "when version table is empty" do
+
+        it "returns an empty string" do
+          Version.should_receive(:last).and_return([])
+          subject.current_version.should == ""
+        end
+      end
+      context "when version is available" do
+        it "returns the current version" do
+          version = double(:id=>5, :number=>"627167327625361")
+          Version.should_receive(:last).and_return(version)
+          subject.current_version.should == version.number
+        end
+      end
+
     end
 
-  end
-  context "when frame_type is full" do
-   it "queries programs table " do
-    Program.stub(:select).and_return(programs)
-    programs.should_receive(:where).with(" air_time_start > :air_time_start ", {:air_time_start => air_time}).and_return(programs)
-    subject.programs_for_current_frame(air_time, :full).should == programs
-  end
-  it "fetches list of programs for the frame type" do
+    describe "#update_to_current_version" do
 
-    Program.stub_chain(:select,:where).and_return(programs)
-    subject.programs_for_current_frame(air_time, :full).should == programs
-  end
-end
-context "when frame_type is incorrect" do
-  it "fetches list of programs for the frame type" do
-    air_time =Time.parse air_time_start.to_s
-    expect {
-      subject.programs_for_current_frame(air_time, :incorrect)
-      }.to raise_error(FrameTypeError, "incorrect frame type")
+
+      it "returns formatted channel information" do
+
+        Program.stub(:version_greater_than).and_return(programs)
+
+        star_tv_entry = double("ActiveRecord Entry", :id => 1, :name => "star", :version_id=>1)
+        hbo_entry = double("ActiveRecord Entry", :id => 2, :name => "hbo", :version_id=>2)
+        channels = [star_tv_entry, hbo_entry]
+        Channel.stub(:version_greater_than).and_return(channels)
+
+        categories =[{:id=>1, :name=>"movie", :version_id=>1}, {:id=>2, :name=>"series", :version_id=>2}]
+        Category.stub(:version_greater_than).and_return(categories)
+
+        friends = double(:id => 123, :name => "friends", :category_id => 1, :series_id => 1, :channel_id => 1, :air_time_start => air_time_start, :air_time_end=>air_time_end, :run_time=>run_time, :imdb_info=>imdb_info, :version_id=>1)
+        king_of_thrones = double(:id => 124, :name => "king of thrones", :category_id => 1, :series_id => 2, :channel_id =>1, :air_time_start => air_time_start, :air_time_end=>air_time_end, :run_time=>run_time, :imdb_info=>imdb_info, :version_id=>2)
+        series = [friends, king_of_thrones]
+        Series.stub(:version_greater_than).and_return(series)
+
+        versions = [{:id=>2, :number=>"32423423"}, {:id=>3, :name=>"34234234"}]
+        Version.stub(:version_greater_than).and_return(versions)
+        client_version = "453453453"
+        Version.should_receive(:find_by_number).with(client_version).and_return([])
+
+        subject.update_to_current_version(client_version).should == {
+            :channels=>channels, :categories=>categories, :programs=>programs, :series=>series, :versions=>versions
+        }
+
+      end
+
     end
+
+
   end
-
-end
-
-describe "#current_version" do
-  context "when version table is empty" do
-
-    it "returns an empty string" do
-      Version.should_receive(:last).and_return([])
-      subject.current_version.should == ""
-    end
-  end
-  context "when version is available" do
-    it "returns the current version" do
-      version = double(:id=>5, :number=>"627167327625361")
-      Version.should_receive(:last).and_return(version)
-      subject.current_version.should == version.number
-    end
-  end
-
-end
-
-describe "#update_to_current_version" do
-
-
- it "returns formatted channel information" do
-  friends = double(:id => 123, :name => "friends", :category_id => 1, :series_id => 1, :channel_id => 1, :air_time_start => air_time_start, :air_time_end=>air_time_end, :run_time=>run_time, :imdb_info=>imdb_info,:version_id=>1)
-  king_of_thrones = double(:id => 124, :name => "king of thrones", :category_id => 1, :series_id => 2, :channel_id =>1, :air_time_start => air_time_start, :air_time_end=>air_time_end, :run_time=>run_time, :imdb_info=>imdb_info,:version_id=>2)
-  programs = [friends, king_of_thrones]
-  Program.stub(:version_greater_than).and_return(programs)
-
-  star_tv_entry = double("ActiveRecord Entry", :id => 1, :name => "star",:version_id=>1)
-  hbo_entry = double("ActiveRecord Entry", :id => 2, :name => "hbo",:version_id=>2)
-  channels = [star_tv_entry, hbo_entry]
-  Channel.stub(:version_greater_than).and_return(channels)
-
-  categories =[{:id=>1, :name=>"movie",:version_id=>1}, {:id=>2, :name=>"series",:version_id=>2}]
-  Category.stub(:version_greater_than).and_return(categories)
-
-  friends = double(:id => 123, :name => "friends", :category_id => 1, :series_id => 1, :channel_id => 1, :air_time_start => air_time_start, :air_time_end=>air_time_end, :run_time=>run_time, :imdb_info=>imdb_info,:version_id=>1)
-  king_of_thrones = double(:id => 124, :name => "king of thrones", :category_id => 1, :series_id => 2, :channel_id =>1, :air_time_start => air_time_start, :air_time_end=>air_time_end, :run_time=>run_time, :imdb_info=>imdb_info,:version_id=>2)
-  series = [friends, king_of_thrones]
-  Series.stub(:version_greater_than).and_return(series)
-
-  versions = [{:id=>2, :number=>"32423423"}, {:id=>3, :name=>"34234234"}]
-  Version.stub(:version_greater_than).and_return(versions)
-  client_version = "453453453"
-  Version.should_receive(:find_by_number).with(client_version).and_return([])
-
-  subject.update_to_current_version(client_version).should == {
-    :channels=>channels, :categories=>categories, :programs=>programs, :series=>series, :versions=>versions
-  }
-
-end
-
-end
-
-
-end
 end
