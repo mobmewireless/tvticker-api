@@ -3,12 +3,10 @@ module MobME::Enterprise::TvChannelInfo
   end
 
   class Service < MobME::Infrastructure::RPC::Base
-
-
     def initialize
       database_configuration_file = File.read File.expand_path(File.dirname(__FILE__)) + "/../../../../db/config.yml"
       database_configuration = YAML.load(database_configuration_file)
-      database_configuration = database_configuration["development"]
+      database_configuration = database_configuration[ENV["RACK_ENV"] || "development"]
       ActiveRecord::Base.establish_connection(database_configuration)
     end
 
