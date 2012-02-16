@@ -8,7 +8,7 @@ end
 
 gem "mobme-infrastructure-rpc" #, :git => "git://git.mobme.in/infrastructure/rpc.git"
 gem "rpc" #, :git => "git://github.com/harigopal/rpc.git"
-gem "activerecord", '~> 3.1.1'
+gem "activerecord"
 gem "rake"
 gem "mysql2"
 gem "standalone_migrations"
@@ -17,3 +17,5 @@ gem "carrierwave"
 gem "mobme-infrastructure-service", :git=>"git://git.mobme.in/infrastructure/service.git", :branch=>"queue"
 gem "mobme-infrastructure-queue" #,:git=>"git://git.mobme.in/infrastructure/queue.git"
 gem "uuid"
+gem "guard"
+gem "guard-rspec"

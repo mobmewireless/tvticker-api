@@ -16,6 +16,9 @@ module MobME::Enterprise::TvChannelInfo
     let(:king_of_thrones) { double(:id => 124, :name => "king of thrones", :category_id => 1, :series_id => 2, :channel_id =>1, :air_time_start => air_time_start, :air_time_end=>air_time_end, :run_time=>run_time, :imdb_info=>imdb_info) }
     let(:programs) { [friends, king_of_thrones] }
     let(:air_time) { Time.parse air_time_start.to_s }
+    let(:timestamp) { Time.now.to_i }
+    let(:hashed_key) { Digest::MD5.hexdigest("#{timestamp}#{"tvticker"}") }
+    let(:hashed_key_wrong) { "XXX" }
 
     before :all do
       air_time_start
@@ -27,12 +30,12 @@ module MobME::Enterprise::TvChannelInfo
       Program.stub(:inspect)
     end
 
-    it { should respond_to(:channels) }
-    it { should respond_to(:current_version) }
-    it { should respond_to(:programs_for_channel).with(1).argument }
-    it { should respond_to(:programs_for_current_frame).with(2).arguments }
-    it { should respond_to(:update_to_current_version).with(0).arguments }
-    it { should respond_to(:update_to_current_version).with(1).arguments }
+    it { should respond_to(:channels).with(2).arguments }
+    it { should respond_to(:current_version).with(2).arguments }
+    it { should respond_to(:programs_for_channel).with(3).argument }
+    it { should respond_to(:programs_for_current_frame).with(4).arguments }
+    it { should respond_to(:update_to_current_version).with(2).arguments }
+    it { should respond_to(:update_to_current_version).with(3).arguments }
 
 
     describe "#initialize" do
@@ -42,7 +45,7 @@ module MobME::Enterprise::TvChannelInfo
         YAML.stub(:load).and_return(database_configuration)
       end
       it "should fetch database configuration from file" do
-        expected_file = File.read File.expand_path(File.dirname(__FILE__)).split('/')[0..-2].join('/') + "/lib/mobme/enterprise/tv_channel_info/../../../../db/config.yml"
+        expected_file = File.read File.expand_path(File.dirname(__FILE__)).split('/')[0..-2].join('/') + "/lib/mobme/enterprise/tv_channel_info/../../../../config/database.yml"
         YAML.should_receive(:load).with(expected_file) #.once.and_return(database_configuration)
         Service.new
       end
@@ -54,10 +57,20 @@ module MobME::Enterprise::TvChannelInfo
       end
     end
 
+    context "when authenticating" do
+      it "works correctly for good keys" do
+        subject.ping(timestamp, hashed_key).should == "pong"
+      end
+
+      it "returns nothing for bad keys" do
+        subject.ping(timestamp, hashed_key_wrong).should == ""
+      end
+    end
+
     describe "#channels" do
       it "fetches channels from database" do
         Channel.should_receive(:select).and_return([])
-        subject.channels
+        subject.channels(timestamp, hashed_key)
       end
 
       it "returns formatted channel information" do
@@ -67,13 +80,13 @@ module MobME::Enterprise::TvChannelInfo
         channels = [star_tv_entry, hbo_entry]
         Channel.stub(:select).and_return(channels)
 
-        subject.channels.should == channels
+        subject.channels(timestamp, hashed_key).should == channels
       end
     end
     describe "#categories" do
       it "fetches channels from database" do
         Category.should_receive(:select).and_return([])
-        subject.categories
+        subject.categories(timestamp, hashed_key)
       end
 
       it "returns formatted channel information" do
@@ -81,7 +94,7 @@ module MobME::Enterprise::TvChannelInfo
         news = double("ActiveRecord Entry", :id => 2, :name => "news")
         categories = [movie, news]
         Category.stub(:select).and_return(categories)
-        subject.categories.should == categories
+        subject.categories(timestamp, hashed_key).should == categories
       end
     end
 
@@ -94,12 +107,12 @@ module MobME::Enterprise::TvChannelInfo
       it "fetches programs for today for the channel" do
         Program.stub(:select).and_return(programs)
         programs.should_receive(:where).with("channel_id = :channel_id and air_time_start like :air_time_start ", {:channel_id => 1, :air_time_start =>"#{air_time_start.strftime("%Y-%m-%d").to_s}%"}).and_return([])
-        subject.programs_for_channel(1)
+        subject.programs_for_channel(timestamp, hashed_key, 1)
       end
 
       it "returns formatted channel information" do
         Program.stub_chain(:select, :where).and_return([])
-        subject.programs_for_channel(1).should == []
+        subject.programs_for_channel(timestamp, hashed_key, 1).should == []
       end
 
     end
@@ -109,11 +122,11 @@ module MobME::Enterprise::TvChannelInfo
         it "queries programs table " do
           Program.stub(:select).and_return(programs)
           programs.should_receive(:where).with(" air_time_start between :air_time_start and :air_time_end", {:air_time_start => air_time-60*60, :air_time_end =>air_time+60*60}).and_return(programs)
-          subject.programs_for_current_frame(air_time, :now)
+          subject.programs_for_current_frame(timestamp, hashed_key, air_time, :now)
         end
         it "fetches list of programs for the frame type" do
           Program.stub_chain(:select, :where).and_return(programs)
-          subject.programs_for_current_frame(air_time, :now).should== programs
+          subject.programs_for_current_frame(timestamp, hashed_key, air_time, :now).should== programs
         end
       end
 
@@ -121,12 +134,12 @@ module MobME::Enterprise::TvChannelInfo
         it "queries programs table " do
           Program.stub(:select).and_return(programs)
           programs.should_receive(:where).with(" air_time_start between :air_time_start and :air_time_end", {:air_time_start => air_time+60*60, :air_time_end =>air_time+3*60*60}).and_return(programs)
-          subject.programs_for_current_frame(air_time, :later).should == programs
+          subject.programs_for_current_frame(timestamp, hashed_key, air_time, :later).should == programs
         end
 
         it "fetches list of programs for the frame type" do
           Program.stub_chain(:select, :where).and_return(programs)
-          subject.programs_for_current_frame(air_time, :later).should == programs
+          subject.programs_for_current_frame(timestamp, hashed_key, air_time, :later).should == programs
         end
 
       end
@@ -134,19 +147,19 @@ module MobME::Enterprise::TvChannelInfo
         it "queries programs table " do
           Program.stub(:select).and_return(programs)
           programs.should_receive(:where).with(" air_time_start > :air_time_start ", {:air_time_start => air_time}).and_return(programs)
-          subject.programs_for_current_frame(air_time, :full).should == programs
+          subject.programs_for_current_frame(timestamp, hashed_key, air_time, :full).should == programs
         end
         it "fetches list of programs for the frame type" do
 
           Program.stub_chain(:select, :where).and_return(programs)
-          subject.programs_for_current_frame(air_time, :full).should == programs
+          subject.programs_for_current_frame(timestamp, hashed_key, air_time, :full).should == programs
         end
       end
       context "when frame_type is incorrect" do
         it "fetches list of programs for the frame type" do
           air_time =Time.parse air_time_start.to_s
           expect {
-            subject.programs_for_current_frame(air_time, :incorrect)
+            subject.programs_for_current_frame(timestamp, hashed_key, air_time, :incorrect)
           }.to raise_error(FrameTypeError, "incorrect frame type")
         end
       end
@@ -158,14 +171,14 @@ module MobME::Enterprise::TvChannelInfo
 
         it "returns an empty string" do
           Version.should_receive(:last).and_return([])
-          subject.current_version.should == ""
+          subject.current_version(timestamp, hashed_key).should == ""
         end
       end
       context "when version is available" do
         it "returns the current version" do
           version = double(:id=>5, :number=>"627167327625361")
           Version.should_receive(:last).and_return(version)
-          subject.current_version.should == version.number
+          subject.current_version(timestamp, hashed_key).should == version.number
         end
       end
 
@@ -196,14 +209,10 @@ module MobME::Enterprise::TvChannelInfo
         client_version = "453453453"
         Version.should_receive(:find_by_number).with(client_version).and_return([])
 
-        subject.update_to_current_version(client_version).should == {
+        subject.update_to_current_version(timestamp, hashed_key, client_version).should == {
             :channels=>channels, :categories=>categories, :programs=>programs, :series=>series, :versions=>versions
         }
-
       end
-
     end
-
-
   end
 end

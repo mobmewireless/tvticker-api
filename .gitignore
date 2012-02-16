@@ -2,3 +2,5 @@ coverage/
 database.yml
 *.jpg
 /vendor
+/config/database.yml
+/log/*.log

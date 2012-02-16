@@ -2,39 +2,100 @@ module MobME::Enterprise::TvChannelInfo
   class FrameTypeError < StandardError
   end
 
+  class AuthenticationError < StandardError
+  end
+
   class Service < MobME::Infrastructure::RPC::Base
+    attr_accessor :logger
+
     def initialize
-      database_configuration_file = File.read File.expand_path(File.dirname(__FILE__)) + "/../../../../db/config.yml"
-      database_configuration = YAML.load(database_configuration_file)
-      database_configuration = database_configuration[ENV["RACK_ENV"] || "development"]
-      ActiveRecord::Base.establish_connection(database_configuration)
+      establish_connection
+      establish_logging
+      load_keys
+
+      #logger.info "Starting up!"
     end
 
-    def ping
+    def ping(timestamp, key)
+      authenticate_credentials(timestamp, key)
+      
+      logger.info "Received ping"
       "pong"
+    rescue MobME::Enterprise::TvChannelInfo::AuthenticationError
+      ""
     end
 
-    def channels
+    def channels(timestamp, key)
+      authenticate_credentials(timestamp, key)
+
+      logger.info "Received channels"
       channels = Channel.select(Channel.column_names - ["version_id"])
+    rescue MobME::Enterprise::TvChannelInfo::AuthenticationError
+      {}
     end
 
-    def categories
+    def categories(timestamp, key)
+      authenticate_credentials(timestamp, key)
+
+      logger.info "Received categories"
       Category.select(Category.column_names - ["version_id"])
+    rescue MobME::Enterprise::TvChannelInfo::AuthenticationError
+      {}
     end
 
-    def programs_for_channel(channel_id)
+    def programs_for_channel(timestamp, key, channel_id)
+      authenticate_credentials(timestamp, key)
+
+      logger.info "Received programs_for_channel(#{channel_id})"
       air_time_start = Time.now.utc
       Program.select(Program.column_names - ["version_id"]).where("channel_id = :channel_id and air_time_start like :air_time_start ", {:channel_id => channel_id, :air_time_start =>"#{air_time_start.strftime("%Y-%m-%d").to_s}%"})
+    rescue MobME::Enterprise::TvChannelInfo::AuthenticationError
+      {}
     end
 
-    def programs_for_current_frame(from_time, frame_type)
+    def programs_for_current_frame(timestamp, key, from_time, frame_type)
+      authenticate_credentials(timestamp, key)
+
+      logger.info "Received programs_for_current_frame(#{from_time}, #{frame_type})"
       time = time_hash_for(from_time, frame_type.to_sym)
       return Program.select(Program.column_names - ["version_id"]).where(" air_time_start between :air_time_start and :air_time_end", time) if frame_type.to_sym == :now or frame_type.to_sym == :later
       return Program.select(Program.column_names - ["version_id"]).where(" air_time_start > :air_time_start ", time) if frame_type.to_sym == :full
       raise FrameTypeError, "incorrect frame type"
+    rescue MobME::Enterprise::TvChannelInfo::AuthenticationError
+      {}
     end
 
+    def current_version(timestamp, key)
+      authenticate_credentials(timestamp, key)
+
+      logger.info "Received current_version"
+
+      Version.last.number rescue ""
+    rescue MobME::Enterprise::TvChannelInfo::AuthenticationError
+      ""
+    end
+
+    def update_to_current_version(timestamp, key, client_version = "")
+      authenticate_credentials(timestamp, key)
+
+      logger.info "Received update_to_current_version(#{client_version})"
+
+      client_version_number = Version.find_by_number(client_version)[:id] rescue 0
+      {
+          :channels => Channel.version_greater_than(client_version_number),
+          :categories => Category.version_greater_than(client_version_number),
+          :programs => Program.version_greater_than(client_version_number),
+          :series => Series.version_greater_than(client_version_number),
+          :versions => Version.version_greater_than(client_version_number)
+      }
+    rescue MobME::Enterprise::TvChannelInfo::AuthenticationError
+      {}
+    end
+
+    private
     def time_hash_for(from_time, frame_type)
+      logger.info "Received time_hash_for(#{from_time}, #{frame_type})"
+
       from_time = Time.parse(from_time.to_s);
       case frame_type
         when :now
@@ -48,29 +109,32 @@ module MobME::Enterprise::TvChannelInfo
       end
     end
 
-    def generate_thumbnail()
-      t = Thumbnail.new
-      t.original_link = "http://images2.fanpop.com/images/photos/3900000/Natalie-Portman-natalie-portman-3947071-1413-1229.jpg"
-      t.status = "pending"
-      t.save
+    def authenticate_credentials(timestamp, hashed_key)
+      key_found = @keys.any? do |key|
+        Digest::MD5.hexdigest("#{timestamp}#{key}") == hashed_key
+      end
+
+      raise MobME::Enterprise::TvChannelInfo::AuthenticationError unless key_found
     end
 
-    def current_version
-      Version.last.number rescue ""
+    def establish_connection
+      database_configuration_file = File.read File.expand_path(File.dirname(__FILE__)) + "/../../../../config/database.yml"
+      database_configuration = YAML.load(database_configuration_file)
+      database_configuration = database_configuration[ENV["RACK_ENV"] || "development"]
+      ActiveRecord::Base.establish_connection(database_configuration)
     end
 
-    def update_to_current_version(client_version = "")
-      client_version_number = Version.find_by_number(client_version)[:id] rescue 0
-      {
-          :channels => Channel.version_greater_than(client_version_number),
-          :categories => Category.version_greater_than(client_version_number),
-          :programs => Program.version_greater_than(client_version_number),
-          :series => Series.version_greater_than(client_version_number),
-          :versions => Version.version_greater_than(client_version_number)
-      }
-
+    def establish_logging
+      log_file = File.expand_path(File.dirname(__FILE__)) + "/../../../../log/api.log"
+      @logger = Logger.new(log_file)
+      ActiveRecord::Base.logger = @logger
     end
 
+    def load_keys
+      key_file = File.expand_path(File.dirname(__FILE__)) + "/../../../../config/keys.yml"
+      @keys = YAML.load_file(key_file).values
+
+      logger.debug "@keys = #{@keys.inspect}"
+    end
   end
-
 end
