@@ -92,7 +92,9 @@ module MobME::Enterprise::TvChannelInfo
       {}
     end
 
-    def now_showing
+    def now_showing(timestamp, key)
+      authenticate_credentials(timestamp, key)
+
       programs = Program.where("air_time_end <= ?", Time.now + 3600)
       programs = Program.all
       programs.map do |p| 
