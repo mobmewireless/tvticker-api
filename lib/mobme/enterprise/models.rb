@@ -29,6 +29,9 @@ module MobME::Enterprise::TvChannelInfo
 
   class Program < ActiveRecord::Base
     scope :version_greater_than, lambda { |v| select(column_names - ["version_id"]).where("version_id > :version_id and air_time_end > :air_time_end", {:version_id =>v,:air_time_end => (Time.now - (60*60))} ) }
+
+    belongs_to :channel
+    belongs_to :category
   end
 
   class Series < ActiveRecord::Base

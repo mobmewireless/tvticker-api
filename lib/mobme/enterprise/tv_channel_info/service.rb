@@ -92,7 +92,19 @@ module MobME::Enterprise::TvChannelInfo
       {}
     end
 
+    def now_showing
+      programs = Program.where("air_time_end <= ?", Time.now + 3600)
+      programs = Program.all
+      programs.map do |p| 
+        p.as_json(
+          :except => [:id, :version_id], 
+          :include => [:category, :channel]
+        )['program']
+      end
+    end
+
     private
+
     def time_hash_for(from_time, frame_type)
       logger.info "Received time_hash_for(#{from_time}, #{frame_type})"
 
