@@ -18,7 +18,7 @@ module MobME::Enterprise::TvChannelInfo
 
     def ping(timestamp, key)
       authenticate_credentials(timestamp, key)
-      
+
       logger.info "Received ping"
       "pong"
     rescue MobME::Enterprise::TvChannelInfo::AuthenticationError
@@ -58,6 +58,7 @@ module MobME::Enterprise::TvChannelInfo
 
       logger.info "Received programs_for_current_frame(#{from_time}, #{frame_type})"
       time = time_hash_for(from_time, frame_type.to_sym)
+      logger.info time
       return Program.select(Program.column_names - ["version_id"]).where(" air_time_start between :air_time_start and :air_time_end", time) if frame_type.to_sym == :now or frame_type.to_sym == :later
       return Program.select(Program.column_names - ["version_id"]).where(" air_time_start > :air_time_start ", time) if frame_type.to_sym == :full
       raise FrameTypeError, "incorrect frame type"
@@ -95,8 +96,7 @@ module MobME::Enterprise::TvChannelInfo
     private
     def time_hash_for(from_time, frame_type)
       logger.info "Received time_hash_for(#{from_time}, #{frame_type})"
-
-      from_time = Time.parse(from_time.to_s);
+      from_time = DateTime.parse(from_time.to_s).in_time_zone("UTC")
       case frame_type
         when :now
           {:air_time_start =>from_time-60*60, :air_time_end =>(from_time+60*60)}
@@ -122,6 +122,7 @@ module MobME::Enterprise::TvChannelInfo
       database_configuration = YAML.load(database_configuration_file)
       database_configuration = database_configuration[ENV["RACK_ENV"] || "development"]
       ActiveRecord::Base.establish_connection(database_configuration)
+      ActiveRecord::Base.default_timezone= :utc
     end
 
     def establish_logging
