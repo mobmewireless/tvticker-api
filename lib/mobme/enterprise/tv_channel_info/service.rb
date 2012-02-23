@@ -70,7 +70,7 @@ module MobME::Enterprise::TvChannelInfo
         else
           raise FrameTypeError, "incorrect frame type"
         end
-      programs.order(:air_time_start).limit(count) do |p| 
+      programs.order(:air_time_start).limit(count).map do |p| 
         p.as_json(:except => [:version_id], :include => [:category, :channel])
       end
     rescue MobME::Enterprise::TvChannelInfo::AuthenticationError
