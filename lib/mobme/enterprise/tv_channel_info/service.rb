@@ -100,7 +100,7 @@ module MobME::Enterprise::TvChannelInfo
       programs = Program.all
       programs.map do |p| 
         p.as_json(
-          :except => [:id, :version_id], 
+          :except => [:version_id], 
           :include => [:category, :channel]
         )['program']
       end
