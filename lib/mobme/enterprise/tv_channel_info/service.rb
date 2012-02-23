@@ -93,10 +93,12 @@ module MobME::Enterprise::TvChannelInfo
       {}
     end
 
-    def now_showing(timestamp, key)
+    def now_showing(timestamp, key, count=nil)
       authenticate_credentials(timestamp, key)
       programs = Program.
-        where("current_time BETWEEN time(air_time_start) AND time(air_time_end)")
+        where("current_time BETWEEN time(air_time_start) AND time(air_time_end)").
+        order('air_time_start').
+        limit(count)
       programs.map do |p| 
         p.as_json(
           :except => [:version_id], 
