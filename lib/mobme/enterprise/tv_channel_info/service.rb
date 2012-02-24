@@ -53,15 +53,26 @@ module MobME::Enterprise::TvChannelInfo
       {}
     end
 
-    def programs_for_current_frame(timestamp, key, from_time, frame_type)
+    def programs_for_current_frame(timestamp, key, from_time, frame_type, count=nil)
       authenticate_credentials(timestamp, key)
 
       logger.info "Received programs_for_current_frame(#{from_time}, #{frame_type})"
       time = time_hash_for(from_time, frame_type.to_sym)
       logger.info time
-      return Program.select(Program.column_names - ["version_id"]).where(" air_time_start between :air_time_start and :air_time_end", time) if frame_type.to_sym == :now or frame_type.to_sym == :later
-      return Program.select(Program.column_names - ["version_id"]).where(" air_time_start > :air_time_start ", time) if frame_type.to_sym == :full
-      raise FrameTypeError, "incorrect frame type"
+
+      programs = 
+        case frame_type.to_sym
+        when :now, :later
+          Program.
+            where("air_time_start BETWEEN :air_time_start and :air_time_end", time) 
+        when :full
+          Program.where("air_time_start > :air_time_start", time) 
+        else
+          raise FrameTypeError, "incorrect frame type"
+        end
+      programs.order(:air_time_start).limit(count).map do |p| 
+        p.as_json(:except => [:version_id], :include => [:category, :channel])
+      end
     rescue MobME::Enterprise::TvChannelInfo::AuthenticationError
       {}
     end
@@ -104,15 +115,16 @@ module MobME::Enterprise::TvChannelInfo
       {}
     end
 
-    def now_showing(timestamp, key)
+    def now_showing(timestamp, key, count=nil)
       authenticate_credentials(timestamp, key)
-
-      programs = Program.where("air_time_end <= ?", Time.now + 3600)
-      programs = Program.all
-      programs.map do |p|
+      programs = Program.
+        where("current_time BETWEEN air_time_start AND air_time_end").
+        order('air_time_start').
+        limit(count)
+      programs.map do |p| 
         p.as_json(
-            :except => [:id, :version_id],
-            :include => [:category, :channel]
+          :except => [:version_id], 
+          :include => [:category, :channel]
         )['program']
       end
     end

@@ -1,3 +1,4 @@
+.bundle
 coverage/
 database.yml
 *.jpg
