@@ -49,7 +49,7 @@ module MobME::Enterprise::TvChannelInfo
       self.number = "#{Time.now.to_i}#{UUID.generate.gsub("-", "")}"
     end
 
-    scope :version_greater_than, lambda { |v| where("id > :version_id", {:version_id =>v}).last }
+    scope :version_greater_than, lambda { |v| where("id > :version_id", {:version_id =>v}).order("id desc").limit(1) }
 
   end
 
