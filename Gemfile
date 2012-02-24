@@ -8,7 +8,6 @@ group :development, :test do
 end
 
 gem "mobme-infrastructure-rpc"
-gem "rpc"
 gem "activerecord"
 gem "rake"
 gem "mysql2"
