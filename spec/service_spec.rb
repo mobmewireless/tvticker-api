@@ -24,7 +24,7 @@ module MobME::Enterprise::TvChannelInfo
       air_time_start
     end
 
-    before do
+    before :each do
       ActiveRecord::Base.stub(:establish_connection)
       Channel.stub(:inspect)
       Program.stub(:inspect)
@@ -68,6 +68,7 @@ module MobME::Enterprise::TvChannelInfo
 
     describe "#channels" do
       it "fetches channels from database" do
+        Channel.stub(:column_names).and_return([])
         Channel.should_receive(:select).and_return([])
         subject.channels(timestamp, hashed_key)
       end
@@ -77,6 +78,7 @@ module MobME::Enterprise::TvChannelInfo
         hbo_entry = double("ActiveRecord Entry", :id => 2, :name => "hbo")
 
         channels = [star_tv_entry, hbo_entry]
+        Channel.stub(:column_names).and_return([])
         Channel.stub(:select).and_return(channels)
 
         subject.channels(timestamp, hashed_key).should == channels
@@ -84,6 +86,7 @@ module MobME::Enterprise::TvChannelInfo
     end
     describe "#categories" do
       it "fetches channels from database" do
+        Category.stub(:column_names).and_return([])
         Category.should_receive(:select).and_return([])
         subject.categories(timestamp, hashed_key)
       end
@@ -92,6 +95,7 @@ module MobME::Enterprise::TvChannelInfo
         movie = double("ActiveRecord Entry", :id => 1, :name => "movie")
         news = double("ActiveRecord Entry", :id => 2, :name => "news")
         categories = [movie, news]
+        Category.stub(:column_names).and_return([])
         Category.stub(:select).and_return(categories)
         subject.categories(timestamp, hashed_key).should == categories
       end
@@ -104,12 +108,14 @@ module MobME::Enterprise::TvChannelInfo
       end
 
       it "fetches programs for today for the channel" do
+        Program.stub(:column_names).and_return([])
         Program.stub(:select).and_return(programs)
         programs.should_receive(:where).with("channel_id = :channel_id and air_time_start like :air_time_start ", {:channel_id => 1, :air_time_start =>"#{air_time_start.strftime("%Y-%m-%d").to_s}%"}).and_return([])
         subject.programs_for_channel(timestamp, hashed_key, 1)
       end
 
       it "returns formatted channel information" do
+        Program.stub(:column_names).and_return([])
         Program.stub_chain(:select, :where).and_return([])
         subject.programs_for_channel(timestamp, hashed_key, 1).should == []
       end
@@ -119,38 +125,29 @@ module MobME::Enterprise::TvChannelInfo
     describe "#programs_for_current_frame" do
       context "when frame_type is now" do
         it "queries programs table " do
+          Program.stub(:column_names).and_return([])
           Program.stub(:select).and_return(programs)
-          programs.should_receive(:where).with(" air_time_start between :air_time_start and :air_time_end", {:air_time_start => air_time-60*60, :air_time_end =>air_time+60*60}).and_return(programs)
-          subject.programs_for_current_frame(timestamp, hashed_key, air_time, :now)
-        end
-        it "fetches list of programs for the frame type" do
-          Program.stub_chain(:select, :where).and_return(programs)
-          subject.programs_for_current_frame(timestamp, hashed_key, air_time, :now).should== programs
+          Program.should_receive(:where).with("air_time_start BETWEEN :air_time_start and :air_time_end", {:air_time_start => air_time-60*60, :air_time_end => air_time+60*60}).and_return(programs)
+          programs.stub_chain(:order, :limit, :map).and_return(programs)
+          subject.programs_for_current_frame(timestamp, hashed_key, air_time, :now).should == programs
         end
       end
 
       context "when frame_type is later" do
         it "queries programs table " do
+          Program.stub(:column_names).and_return([])
           Program.stub(:select).and_return(programs)
-          programs.should_receive(:where).with(" air_time_start between :air_time_start and :air_time_end", {:air_time_start => air_time+60*60, :air_time_end =>air_time+3*60*60}).and_return(programs)
+          Program.should_receive(:where).with("air_time_start BETWEEN :air_time_start and :air_time_end", {:air_time_start => air_time+60*60, :air_time_end => air_time+3*60*60}).and_return(programs)
+          programs.stub_chain(:order, :limit, :map).and_return(programs)
           subject.programs_for_current_frame(timestamp, hashed_key, air_time, :later).should == programs
         end
-
-        it "fetches list of programs for the frame type" do
-          Program.stub_chain(:select, :where).and_return(programs)
-          subject.programs_for_current_frame(timestamp, hashed_key, air_time, :later).should == programs
-        end
-
       end
       context "when frame_type is full" do
         it "queries programs table " do
+          Program.stub(:column_names).and_return([])
           Program.stub(:select).and_return(programs)
-          programs.should_receive(:where).with(" air_time_start > :air_time_start ", {:air_time_start => air_time}).and_return(programs)
-          subject.programs_for_current_frame(timestamp, hashed_key, air_time, :full).should == programs
-        end
-        it "fetches list of programs for the frame type" do
-
-          Program.stub_chain(:select, :where).and_return(programs)
+          Program.should_receive(:where).with("air_time_start > :air_time_start", {:air_time_start => air_time}).and_return(programs)
+          programs.stub_chain(:order, :limit, :map).and_return(programs)
           subject.programs_for_current_frame(timestamp, hashed_key, air_time, :full).should == programs
         end
       end

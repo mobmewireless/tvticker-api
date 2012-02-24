@@ -95,7 +95,6 @@ DEPENDENCIES
   mysql2
   rake
   random_data
-  rpc
   rspec
   simplecov
   standalone_migrations
