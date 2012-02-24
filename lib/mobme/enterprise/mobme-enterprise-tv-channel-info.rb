@@ -5,14 +5,13 @@ require 'json'
 
 # Gems
 require 'bundler/setup'
-require 'mobme-infrastructure-rpc'
+require 'sync_service'
 require 'active_record'
 require 'active_support/all'
 require 'carrierwave'
 require 'carrierwave/orm/activerecord'
 require 'open-uri'
-require "mobme/infrastructure/service"
-require 'mobme/infrastructure/service/worker'
+require "async_service"
 require 'mobme/infrastructure/queue'
 require "uuid"
 
