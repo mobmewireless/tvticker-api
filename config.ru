@@ -1,6 +1,5 @@
 require "bundler/setup"
 
-require "mobme-infrastructure-rpc"
 
 require "#{File.expand_path(File.dirname(__FILE__))}/lib/mobme/enterprise/mobme-enterprise-tv-channel-info"
 
