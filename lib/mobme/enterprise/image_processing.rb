@@ -1,6 +1,5 @@
 # Gems
 require 'bundler/setup'
-require 'mobme-infrastructure-rpc'
 require 'active_record'
 require 'active_support/all'
 require 'carrierwave'
