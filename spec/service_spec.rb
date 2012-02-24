@@ -34,10 +34,9 @@ module MobME::Enterprise::TvChannelInfo
     it { should respond_to(:current_version).with(2).arguments }
     it { should respond_to(:programs_for_channel).with(3).argument }
     it { should respond_to(:programs_for_current_frame).with(4).arguments }
-    it { should respond_to(:update_to_current_version).with(2).arguments }
-    it { should respond_to(:update_to_current_version).with(3).arguments }
-
-
+    it { should respond_to(:update_to_current_version_except_programs).with(2).arguments }
+    it { should respond_to(:update_to_current_version_except_programs).with(3).arguments }
+    it { should respond_to(:update_programs_to_current_version).with(2).arguments }
     describe "#initialize" do
 
       let(:database_configuration) { double("Configuration").as_null_object }
@@ -181,10 +180,10 @@ module MobME::Enterprise::TvChannelInfo
 
     end
 
-    describe "#update_to_current_version" do
+    describe "#update_to_current_version_except_programs" do
 
 
-      it "returns formatted channel information" do
+      it "returns formatted info except of programs information" do
 
         Program.stub(:version_greater_than).and_return(programs)
 
@@ -206,8 +205,17 @@ module MobME::Enterprise::TvChannelInfo
         client_version = "453453453"
         Version.should_receive(:find_by_number).with(client_version).and_return([])
 
-        subject.update_to_current_version(timestamp, hashed_key, client_version).should == {
-            :channels=>channels, :categories=>categories, :programs=>programs, :series=>series, :versions=>versions
+        subject.update_to_current_version_except_programs(timestamp, hashed_key, client_version).should == {
+            :channels=>channels, :categories=>categories, :series=>series, :versions=>versions
+        }
+      end
+    end
+
+    describe "#update_programs_to_current_version" do
+      it "returns formatted program information" do
+        Program.stub(:version_greater_than).and_return(programs)
+        subject.update_programs_to_current_version(timestamp, hashed_key).should == {
+            :programs => programs
         }
       end
     end
