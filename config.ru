@@ -31,6 +31,5 @@ end
 map("/service") do
   RPC.logging= true
   use AllowCrossOriginMiddleware
-  run(MobME::Infrastructure::
-      RPC::Adaptor.new(MobME::Enterprise::TvChannelInfo::Service.new))
+  run(SyncService::Adaptor.new(MobME::Enterprise::TvChannelInfo::Service.new))
 end
