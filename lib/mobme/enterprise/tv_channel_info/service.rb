@@ -76,7 +76,7 @@ module MobME::Enterprise::TvChannelInfo
       ""
     end
 
-    def update_to_current_version(timestamp, key, client_version = "")
+    def update_to_current_version_except_programs(timestamp, key, client_version = "")
       authenticate_credentials(timestamp, key)
 
       logger.info "Received update_to_current_version(#{client_version})"
@@ -85,9 +85,20 @@ module MobME::Enterprise::TvChannelInfo
       {
           :channels => Channel.version_greater_than(client_version_number),
           :categories => Category.version_greater_than(client_version_number),
-          :programs => Program.version_greater_than(client_version_number),
           :series => Series.version_greater_than(client_version_number),
           :versions => Version.version_greater_than(client_version_number)
+      }
+    rescue MobME::Enterprise::TvChannelInfo::AuthenticationError
+      {}
+    end
+
+    def update_programs_to_current_version(timestamp, key)
+      authenticate_credentials(timestamp, key)
+
+      logger.info "Received update_programs_to_current_version"
+      client_version_number = 0
+      {
+          :programs => Program.version_greater_than(client_version_number),
       }
     rescue MobME::Enterprise::TvChannelInfo::AuthenticationError
       {}
@@ -98,10 +109,10 @@ module MobME::Enterprise::TvChannelInfo
 
       programs = Program.where("air_time_end <= ?", Time.now + 3600)
       programs = Program.all
-      programs.map do |p| 
+      programs.map do |p|
         p.as_json(
-          :except => [:id, :version_id], 
-          :include => [:category, :channel]
+            :except => [:id, :version_id],
+            :include => [:category, :channel]
         )['program']
       end
     end
