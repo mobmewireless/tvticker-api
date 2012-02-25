@@ -43,7 +43,7 @@ module MobME::Enterprise::TvChannelInfo
   end
 
   class Version < ActiveRecord::Base
-    after_initialize :init_version
+    before_save :init_version
 
     def init_version
       self.number = "#{Time.now.to_i}#{UUID.generate.gsub("-", "")}"
