@@ -128,7 +128,7 @@ module MobME::Enterprise::TvChannelInfo
         it "queries programs table " do
           Program.stub(:column_names).and_return([])
           Program.stub(:select).and_return(programs)
-          Program.should_receive(:where).with("air_time_start BETWEEN :air_time_start and :air_time_end", {:air_time_start => air_time, :air_time_end => air_time+60*60}).and_return(programs)
+          Program.should_receive(:where).with("air_time_start between :air_time_start and :air_time_end and air_time_end > :end_time", {:air_time_start => air_time - 60*60, :air_time_end =>air_time+60*60, :end_time =>air_time}).and_return(programs)
           programs.stub_chain(:order, :limit, :map).and_return(programs)
           subject.current_frame_full_data(timestamp, hashed_key, air_time, :now).should == programs
         end
@@ -138,7 +138,7 @@ module MobME::Enterprise::TvChannelInfo
         it "queries programs table " do
           Program.stub(:column_names).and_return([])
           Program.stub(:select).and_return(programs)
-          Program.should_receive(:where).with("air_time_start BETWEEN :air_time_start and :air_time_end", {:air_time_start => air_time+60*60, :air_time_end => air_time+3*60*60}).and_return(programs)
+          Program.should_receive(:where).with("air_time_start between :air_time_start and :air_time_end and air_time_end > :end_time", {:air_time_start => air_time+60*60, :air_time_end =>air_time+3*60*60,:end_time=> air_time+60*60}).and_return(programs)
           programs.stub_chain(:order, :limit, :map).and_return(programs)
           subject.current_frame_full_data(timestamp, hashed_key, air_time, :later).should == programs
         end
@@ -147,7 +147,7 @@ module MobME::Enterprise::TvChannelInfo
         it "queries programs table " do
           Program.stub(:column_names).and_return([])
           Program.stub(:select).and_return(programs)
-          Program.should_receive(:where).with("air_time_start > :air_time_start", {:air_time_start => air_time}).and_return(programs)
+          Program.should_receive(:where).with("air_time_start > :air_time_start or :air_time_end > :air_time_start", {:air_time_start => air_time}).and_return(programs)
           programs.stub_chain(:order, :limit, :map).and_return(programs)
           subject.current_frame_full_data(timestamp, hashed_key, air_time, :full).should == programs
         end
@@ -168,7 +168,7 @@ module MobME::Enterprise::TvChannelInfo
         it "queries programs table " do
           Program.stub(:column_names).and_return([])
           Program.stub(:select).and_return(programs)
-          programs.should_receive(:where).with(" air_time_start between :air_time_start and :air_time_end or air_time_end between :air_time_start and :air_time_end", {:air_time_start => air_time, :air_time_end =>air_time+60*60}).and_return(programs)
+          programs.should_receive(:where).with("air_time_start between :air_time_start and :air_time_end and air_time_end > :end_time", {:air_time_start => air_time - 60*60, :air_time_end =>air_time+60*60, :end_time =>air_time}).and_return(programs)
           subject.programs_for_current_frame(timestamp, hashed_key, air_time, :now)
         end
         it "fetches list of programs for the frame type" do
@@ -184,7 +184,7 @@ module MobME::Enterprise::TvChannelInfo
           Program.stub(:column_names).and_return([])
           Program.stub(:select).and_return(programs)
           Program.stub(:select).and_return(programs)
-          programs.should_receive(:where).with(" air_time_start between :air_time_start and :air_time_end or air_time_end between :air_time_start and :air_time_end", {:air_time_start => air_time+60*60, :air_time_end =>air_time+3*60*60}).and_return(programs)
+          programs.should_receive(:where).with("air_time_start between :air_time_start and :air_time_end and air_time_end > :end_time", {:air_time_start => air_time+60*60, :air_time_end =>air_time+3*60*60,:end_time=> air_time+60*60}).and_return(programs)
           subject.programs_for_current_frame(timestamp, hashed_key, air_time, :later).should == programs
         end
 
@@ -201,7 +201,7 @@ module MobME::Enterprise::TvChannelInfo
           Program.stub(:column_names).and_return([])
           Program.stub(:select).and_return(programs)
           Program.stub(:select).and_return(programs)
-          programs.should_receive(:where).with(" air_time_start > :air_time_start or :air_time_end > :air_time_start", {:air_time_start => air_time}).and_return(programs)
+          programs.should_receive(:where).with("air_time_start > :air_time_start or :air_time_end > :air_time_start", {:air_time_start => air_time}).and_return(programs)
           subject.programs_for_current_frame(timestamp, hashed_key, air_time, :full).should == programs
         end
         it "fetches list of programs for the frame type" do
