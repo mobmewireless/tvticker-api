@@ -28,15 +28,16 @@ module MobME::Enterprise::TvChannelInfo
   end
 
   class Program < ActiveRecord::Base
-    scope :version_greater_than, lambda { |v| select(column_names - ["version_id"]).where("version_id > :version_id and air_time_end > :air_time_start ", {:version_id =>v,:air_time_start => (Time.now)} )}
-    scope :version_greater_than_ordered, lambda { |v,number_of_days| select(column_names - ["version_id"]).where("version_id > :version_id and air_time_end between :air_time_start and :air_time_end", {:version_id =>v,:air_time_start => (Time.now),:air_time_end => (Time.now + number_of_days.days)} ).order(:version_id)}
+    scope :version_greater_than, lambda { |v| select(column_names - ["version_id"]).where("version_id > :version_id and air_time_end > :air_time_start ", {:version_id =>v, :air_time_start => (Time.now)}) }
+    scope :version_greater_than_ordered, lambda { |v, number_of_days| select(column_names - ["version_id"]).where("version_id > :version_id and air_time_end between :air_time_start and :air_time_end", {:version_id =>v, :air_time_start => (Time.now), :air_time_end => (Time.now + number_of_days.days)}).order(:version_id) }
 
     belongs_to :channel
     belongs_to :category
+    belongs_to :version
   end
 
   class Series < ActiveRecord::Base
-    scope :version_greater_than, lambda { |v| select(column_names - ["version_id"]).where("version_id > :version_id", {:version_id =>v})}
+    scope :version_greater_than, lambda { |v| select(column_names - ["version_id"]).where("version_id > :version_id", {:version_id =>v}) }
   end
 
   class Category < ActiveRecord::Base
@@ -45,6 +46,7 @@ module MobME::Enterprise::TvChannelInfo
 
   class Version < ActiveRecord::Base
     before_save :init_version
+    has_many :programs
 
     def init_version
       self.number = "#{Time.now.to_i}#{UUID.generate.gsub("-", "")}"
