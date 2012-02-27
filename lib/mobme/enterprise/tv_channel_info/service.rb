@@ -120,8 +120,8 @@ module MobME::Enterprise::TvChannelInfo
 
       logger.info "Received update_programs_to_current_version"
       client_version_number = Version.find_by_number(client_version)[:id] rescue 0
+      latest_version_number = Program.latest_version(client_version_number,days).first.version.number rescue client_version
       programs = Program.version_greater_than_ordered(client_version_number,days)
-      latest_version_number = programs.last.version.number rescue client_version
       {
           :programs => Program.version_greater_than_ordered(client_version_number,days),
           :version =>  latest_version_number
