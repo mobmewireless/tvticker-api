@@ -115,13 +115,16 @@ module MobME::Enterprise::TvChannelInfo
       {}
     end
 
-    def update_programs_to_current_version(timestamp, key)
+    def update_programs_to_current_version(timestamp, key, client_version = "", days = 7)
       authenticate_credentials(timestamp, key)
 
       logger.info "Received update_programs_to_current_version"
-      client_version_number = 0
+      client_version_number = Version.find_by_number(client_version)[:id] rescue 0
+      programs = Program.version_greater_than_ordered(client_version_number,days)
+      latest_version_number = programs.last.version.number rescue client_version
       {
-          :programs => Program.version_greater_than(client_version_number),
+          :programs => Program.version_greater_than_ordered(client_version_number,days),
+          :version =>  latest_version_number
       }
     rescue MobME::Enterprise::TvChannelInfo::AuthenticationError
       {}

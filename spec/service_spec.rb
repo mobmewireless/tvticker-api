@@ -273,9 +273,11 @@ module MobME::Enterprise::TvChannelInfo
 
     describe "#update_programs_to_current_version" do
       it "returns formatted program information" do
-        Program.stub(:version_greater_than).and_return(programs)
+        Program.stub(:version_greater_than_ordered).and_return(programs)
+        programs.stub_chain(:last,:version,:number).and_return("abc")
         subject.update_programs_to_current_version(timestamp, hashed_key).should == {
-            :programs => programs
+            :programs => programs,
+             :version =>"abc"
         }
       end
     end
